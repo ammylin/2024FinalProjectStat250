@@ -1,0 +1,51 @@
+
+```{r}
+library(ggplot2)
+
+#importing in data
+fires <- read.csv('https://people.carleton.edu/~apoppick/ClassData/CA_fires',header = TRUE)
+
+
+#Defining our dataset of interest
+Y<-fires$GIS_ACRES
+
+n<-length(Y)
+
+y_m <- 5e4
+
+
+
+#Generating our chosen estimate from the simulation
+alpha_hat_MLE <- 1/mean(log(Y/y_m)) #MLE Formula
+#Generating our chosen confidence interval from the simulation
+exact.lower <- alpha_hat_MLE*qgamma(0.025, n, n)
+exact.upper <- alpha_hat_MLE*qgamma(0.975, n, n)
+
+#Output
+cat("Thus our estimate of alpha is ", alpha_hat_MLE, "With a 95% confidence interval (", exact.lower,"," ,exact.upper,")" )
+
+#Then using our alpha  to set up a pareto distribution and sampling it a large number of times
+X <- rexp(100000, rate = alpha_hat_MLE)
+expected_dist <- y_m * exp(X) # Y ~ Pareto(y_m, alpha)
+
+#Getting quantiles corresponding to each point in fires 
+repquantiles<-c(1/((n+1)/(1:n)))
+#Getting values corresponding to those quantiles
+repvalues<-quantile(expected_dist, repquantiles)
+
+#Generating a qq plot for them
+qqplot(Y/1000, repvalues/1000, xlab = "Wildfire Size (1000 acres)", ylab = "Expected Value at Quantile (1000 Acres) ")
+
+```
+
+Our goal is to then get the expected number of fires per year:
+
+
+```{r}
+#Expected Rate from Assignment
+expected_rate = 9
+#Upper Value of Interest
+upperval<-3e5
+#Output From
+cat("This gives us an estimated number of fires over 300,000 acres as between ", expected_rate*(y_m/upperval)**exact.upper, "and ", expected_rate*(y_m/upperval)**exact.lower, "fires per year")
+```
